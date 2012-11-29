@@ -1,0 +1,106 @@
+# constants
+DEFAULT_PORT = 12345
+DEFAULT_TIME = 5.0
+DEFAULT_RECV_LEN = 8192 # a normal limit lenght of http request
+STATUS_BAD_REQUEST = 400 # Server refuse to response over limitation request
+HTTP_HEAD_REQ = 0
+
+def server_timeout(connhandle):
+  print "Time out, stop server\n"
+  connhandle.close()
+
+def parse_reqhead(msg_buffer):
+  # incomplete request.
+  if msg_buffer.find("\n\n") == -1:
+    return STATUS_BAD_REQUEST
+
+  # split message buffer for line by line in a list
+  line_buffer = msg_buffer.split('\n') 
+  req_line = line_buffer[HTTP_HEAD_REQ].split(' ')
+
+  # check request line
+  if len(req_line) == 3 and req_line[0] == 'GET' and (req_line[2] == 'HTTP/1.1' or req_line[2] == 'HTTP/1.0'):
+    head = req_line[1]
+
+  return head
+
+def parse_content(req_file):
+  content = ""
+  filebuff = listdir()
+
+  if req_file == '/': # list current dir
+    for filename in filebuff:
+      filestr = "<p>" + filename + "</p>"
+      content = content + filestr
+
+  else: # list sepcific file
+    given_name = req_file.strip('/')
+    for filename in filebuff:
+      if given_name == filename:
+        content = 'HTTP/1.1 200 OK\n\n'
+        filehandle = open(filename, "r")
+        content = content + filehandle.read()
+        filehandle.close()
+      else:
+        content = 'HTTP/1.1 Not Found\n\n<h1>File not found</h1>'
+
+  return content
+
+def reply_request(connhandle):
+  # recive whole message
+  msg_buffer = connhandle.recv(DEFAULT_RECV_LEN)
+  msg_buffer = msg_buffer.replace("\r\n", "\n")
+
+  # process request line
+  head = parse_reqhead(msg_buffer)
+  if head == STATUS_BAD_REQUEST:
+    response = "HTTP/1.1 400 Bad Request\n\n<h1>400 Bad Request</h1>"
+  else:
+    content = parse_content(head)
+
+  # reply request
+  connhandle.send(content)
+
+  # close connection
+  connhandle.close()
+
+def listen_callback(ip, port, connhandle, commhandle, listenhandle):
+  # start a timer to calculate close time
+  timehandle = settimer(DEFAULT_TIME, server_timeout, [connhandle])
+
+  # lock this thread
+  mycontext['_server_lock_'].acquire()
+
+  # process user's request
+  try:
+       # get a request cancel timer
+    canceltimer(timehandle)
+
+    # reply uer's request
+    reply_request(connhandle) 
+
+  except Exception, e:
+    print str(e)
+
+    # process user's data
+  finally:
+    mycontext['_server_lock_'].release()
+    stopcomm(commhandle)
+
+if callfunc == "initialize":
+  # initialize web server
+  ip = getmyip()
+  mycontext['_server_lock_'] = getlock()
+
+  # if user doesn't input, use the default
+  if len(callargs) > 1:
+    raise Exception("Illegal arguments.")
+  elif len(callargs) == 1:
+    # use user's given port
+    port = callargs[0]
+  else:
+    port = DEFAULT_PORT
+
+  # waiting for connection
+  listencommhandle = waitforconn(ip, port, listen_callback)
+

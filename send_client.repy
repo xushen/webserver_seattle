@@ -1,0 +1,49 @@
+"""
+<Author>
+Shen Xu
+
+<Date>
+Oct 2012
+
+<Description>
+Learn how to use recvmess and sendmess
+"""
+
+def millsends_translante(second):
+  return (second / 1000)
+
+# configure send settings by users' input
+def reliable_config(dstip, dstport, timoutinms=None, nretries=None):
+  mycontext['_send_ip_'] = dstip
+
+  mycontext['_send_port_'] = dstport
+
+  if timoutinms == None:
+    mycontext["_send_timeout_"] = millsends_translante(10)
+  else:
+    mycontext["_send_timeout_"] = millsends_translante(int(timoutinms))
+
+  if nretries == None:
+    mycontext["_send_retries_"] = 4
+  else:
+    mycontext["_send_retries_"] = nretries
+
+def recv_callback(remoteIP, remoteport, message, commhandle):
+  print "Recieve remote message. Ip = " + str(remoteIP) + " PORT = " + str(remoteport) + " message " + message 
+  stopcomm(commhandle)
+
+if callfunc == 'initialize':
+
+  # send first data
+  dstip = callargs[0]
+  dstport = callargs[1]
+  message = "Hello, World"
+  srcip = callargs[2]
+  srcport = callargs[3]
+
+  #sendmess(mycontext["_send_ip_"], mycontext["_send_port_"], message, srcip, srcport)
+  sendmess(dstip, dstport, message, srcip, srcport)
+
+  # recive for ack
+  recvmess(srcip, srcport, recv_callback)
+

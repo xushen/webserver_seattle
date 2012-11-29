@@ -1,0 +1,22 @@
+"""
+<Author>
+Shen Xu
+
+<Date>
+13 Oct 2012
+
+<Description>
+Using send and recvmess
+"""
+
+def recv_callback(remoteIP, remoteport, message, commhandle):
+  print "Send_server: Recive remote message: " + message
+  send_message = "Server recive message" 
+  sendmess(remoteIP, remoteport, send_message)
+  stopcomm(commhandle)
+
+if callfunc == 'initialize':
+  listen_ip = getmyip()
+  listen_port = 2888
+
+  recvmess(listen_ip, int(listen_port), recv_callback)
